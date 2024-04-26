@@ -1,0 +1,6 @@
+compile_commands.json
+VS2022-*/
+mingw11.2-x86_64
+.cache/
+# .vscode/
+*.exe
