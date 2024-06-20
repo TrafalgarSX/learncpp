@@ -41,6 +41,7 @@ std::string func_test() {
   return std::to_string(random);
 }
 
+
 void async_demo2() {
   vector<std::future<std::string>> futures;
 

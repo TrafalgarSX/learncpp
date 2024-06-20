@@ -1,5 +1,13 @@
 #include <iostream>
 #include <string>
+#include <vector>
+#include <hexUtil.h>
+
+
+std::string bytesToHexString(const std::vector<uint8_t> buf, char sep)
+{
+    return bytesToHexString(buf.data(), buf.size(), sep);
+}
 
 std::string bytesToHexString(const uint8_t* buf, int len, char sep)
 {
@@ -80,3 +88,29 @@ uint8_t* hexStringToBytes(const std::string& hexString, int* outLen, char sep)
 	return buf;
 }
 
+
+std::vector<uint8_t> hexStringToBytes(const std::string& hexString, char sep)
+{
+    std::vector<uint8_t> buf;
+	int len = 0;
+	int hasSep = sep == '\0' ? 0 : 1;
+
+    do{
+        if (hexString.empty())
+        {
+            break;
+        }
+        len = hexString.length() / (2 + hasSep);
+        buf.reserve(len);
+
+        int i = 0;
+        int j = 0;
+        for (; i < len; i++, j += 2 + hasSep) {
+            buf.push_back((hexCharToByte(hexString[j]) << 4) | hexCharToByte(hexString[j + 1]));
+        }
+
+    }while(0);
+
+	return buf;
+
+}
