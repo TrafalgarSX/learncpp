@@ -54,7 +54,7 @@ list(APPEND EXTRA_INCLUDE
                            "${MY_DEV_LIB_PATH}/include" # 第三方库的头文件
                            )
 
-list(APPEND EXTRA_SRC "${PROJECT_SOURCE_DIR}/socket_server.c")
+list(APPEND EXTRA_SRC)
 
 #link lib 后面应该完善，操作系统和编译器组合判断
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -91,7 +91,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
     # list(APPEND EXTRA_DEFINES "_LOG_")
     # list(APPEND EXTRA_COMPILE_FLAGS "$<IF:$<CONFIG:Debug>,MTd,MT>")
-    list(APPEND EXTRA_COMPILE_FLAGS "/MD$<$<CONFIG:Debug>:d>")
+    list(APPEND EXTRA_COMPILE_FLAGS "/MD$<$<CONFIG:Debug>:d>"  "/utf-8")
 
     # 动态库
     # find_package(CURL CONFIG REQUIRED)
@@ -101,8 +101,20 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     find_package(glog CONFIG REQUIRED)
     find_package(libuv CONFIG REQUIRED)
     find_package(fmt CONFIG REQUIRED)
+    find_package(jsoncpp CONFIG REQUIRED)
+    find_package(nlohmann_json CONFIG REQUIRED)
+    find_package(OpenSSL REQUIRED)
+    find_package(asio CONFIG REQUIRED)
+    # vcpkg  Qt5Cored.lib
+    find_package(Qt5 COMPONENTS Core REQUIRED)
+    # vcpkg  Qt5Network.lib
+    find_package(Qt5 COMPONENTS Network REQUIRED)
+    find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
+    find_package(Python COMPONENTS Interpreter Development)
+    find_package(spdlog CONFIG REQUIRED)
     list(APPEND EXTRA_LIB fmt::fmt)
+    list(APPEND EXTRA_LIB spdlog::spdlog)
   endif()
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -133,130 +145,82 @@ target_link_libraries(${PROJECT_NAME} PRIVATE common)
 # 源文件
 target_sources(${PROJECT_NAME} PUBLIC main.cpp)
 
+list(APPEND _targets "usefmt" "testtiming" "structureBinding" "testoptional" 
+    "testvariant" "testasync" "teststringview" "testArg" "newArray" "testIter" 
+    "testEmplace" "testdefault" "testfstream" "testRWLock" 
+    "testShareMemory" 
+    "stdAlgorithms" "testThreadLocal" "testConst" "testSwap" 
+    "testClassScope" "testTryCatch" "testUsing" "testClass" "testMultiClass"
+    "testUnion" "testMemberPointer" "testRTTI" "testNew" "testTemplate" 
+    "order" "testExecCodePage" "testRLvalue" "testRemoveRf" "testFilesystem"
+    "testInitialize" "testVirtual" "testTypeTraits" "testCryptFile"
+    "testNumber" "testPromise" "testFuncObj" "testThread" "testPackage_task"
+    "cast_check" 
+    )
 
-add_executable(usefmt usefmt.cpp)
+foreach(_target IN LISTS _targets)
 
-target_link_libraries(usefmt PRIVATE common)
+    add_executable(${_target})
+    target_link_libraries(${_target} PRIVATE common)
+    target_sources(${_target} PUBLIC "${_target}.cpp")
 
-add_executable(testtiming testtiming.cpp)
+endforeach()
 
-target_link_libraries(testtiming PRIVATE common)
+add_executable(testQtBase)
+target_link_libraries(testQtBase PRIVATE common Qt5::Core Qt5::Network)
+target_sources(testQtBase PUBLIC "testQtBase.cpp")
 
-add_executable(structureBinding structureBinding.cpp)
+add_executable(testAsio)
+target_link_libraries(testAsio PRIVATE common asio::asio)
+target_sources(testAsio PUBLIC "testAsio.cpp")
 
-target_link_libraries(structureBinding PRIVATE common)
+add_executable(asioClient)
+target_link_libraries(asioClient PRIVATE common asio::asio)
+target_sources(asioClient PUBLIC "asioClient.cpp" "hexUtil.cpp")
 
-add_executable(testoptional testOptional.cpp)
+add_executable(asioServer)
+target_link_libraries(asioServer PRIVATE common asio::asio)
+target_sources(asioServer PUBLIC "asioServer.cpp"  "hexUtil.cpp")
 
-target_link_libraries(testoptional PRIVATE common)
 
-add_executable(testvariant testVariant.cpp)
+add_executable(testSpdlog)
+target_link_libraries(testSpdlog PRIVATE common spdlog::spdlog)
+target_compile_definitions(testSpdlog PRIVATE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+target_sources(testSpdlog PUBLIC "testSpdlog.cpp" )
 
-target_link_libraries(testvariant PRIVATE common)
+add_executable(testSpdlogPrint)
+target_link_libraries(testSpdlogPrint PRIVATE common spdlog::spdlog)
+target_sources(testSpdlogPrint PUBLIC "testSpdlogPrint.cpp" )
 
-add_executable(testasync testasync.cpp)
+add_executable(testNlohmanJson)
+target_link_libraries(testNlohmanJson PRIVATE common nlohmann_json::nlohmann_json fmt::fmt)
+target_sources(testNlohmanJson PUBLIC "testNlohmannJson.cpp" )
 
-target_link_libraries(testasync PRIVATE common)
+get_target_property(TESTSPDLOG_DEFINITIONS testSpdlogPrint COMPILE_DEFINITIONS)
 
-add_executable(teststringview teststringview.cpp)
+message(STATUS "testSpdlog compile definitions: ${TESTSPDLOG_DEFINITIONS}")
 
-target_link_libraries(teststringview PRIVATE common)
-
-add_executable(testArg testArg.cpp)
-
-add_executable(newArray newArray.cpp)
-
-add_executable(testIter testIter.cpp)
-
-add_executable(testEmplace testEmplace.cpp)
-
-add_executable(testdefault testdefault.cpp)
-
-add_executable(testfstream testfstream.cpp)
-
-add_executable(sm9TestData sm9TestData.cpp hexUtil.cpp)
-target_link_libraries(sm9TestData PRIVATE common)
-
-add_executable(testRWLock testrwlock.cpp ReadWriteLock.c)
-target_link_libraries(testRWLock PRIVATE common)
-
-add_executable(testShareMemory testsharememory.cpp)
-target_link_libraries(testShareMemory PRIVATE common)
-
-add_executable(testShareMemoryAccept acceptmemoryinfo.cpp)
-target_link_libraries(testShareMemoryAccept PRIVATE common)
-
-add_executable(testSearchVector searchTime.cpp)
-target_link_libraries(testSearchVector PRIVATE common)
-
-add_executable(stdAlgorithms stdAlgorithms.cpp)
-target_link_libraries(stdAlgorithms PRIVATE common)
-
-add_executable(testThreadLocal testThreadLocal.cpp)
-target_link_libraries(testThreadLocal PRIVATE common)
-
-add_executable(testConst testConst.cpp)
-target_link_libraries(testConst PRIVATE common)
-
-add_executable(testSwap testSwap.cpp)
-target_link_libraries(testSwap PRIVATE common)
-
-add_executable(testClassScope testClassScope.cpp)
-target_link_libraries(testClassScope PRIVATE common)
-
-add_executable(testTryCatch testTryCatch.cpp)
-target_link_libraries(testTryCatch PRIVATE common)
-
-add_executable(testUsing testUsing.cpp)
-target_link_libraries(testUsing PRIVATE common)
-
-add_executable(testClass testClass.cpp)
-target_link_libraries(testClass PRIVATE common)
-
-add_executable(testMultiClass testMultiClass.cpp)
-target_link_libraries(testMultiClass PRIVATE common)
-
-add_executable(testUnion testUnion.cpp)
-target_link_libraries(testUnion PRIVATE common)
-
-add_executable(testMemberPointer testMemberPointer.cpp)
-target_link_libraries(testMemberPointer PRIVATE common)
-
-add_executable(testRTTI testRTTI.cpp)
-target_link_libraries(testRTTI PRIVATE common)
-
-add_executable(testNew testNew.cpp)
-target_link_libraries(testNew PRIVATE common)
-
-add_executable(testTemplate testTemplate.cpp)
-target_link_libraries(testTemplate PRIVATE common)
-
-add_executable(order order.cpp)
-target_link_libraries(order PRIVATE common)
-
-add_executable(testExecCodePage testExecCodePage.cpp)
-target_link_libraries(testExecCodePage PRIVATE common)
-
-add_executable(testRLvalue testRLvalue.cpp)
-target_link_libraries(testRLvalue PRIVATE common)
-
-add_executable(testRemoveRf testRemoveRf.cpp)
-target_link_libraries(testRemoveRf PRIVATE common)
-
-add_executable(testFilesystem testFilesystem.cpp)
-target_link_libraries(testFilesystem PRIVATE common)
-
-add_executable(testInitialize testInitialize.cpp)
-target_link_libraries(testInitialize PRIVATE common)
-
-add_executable(testVirtual testVirtual.cpp)
-target_link_libraries(testVirtual PRIVATE common)
+# add_executable(pybindTest)
+# target_link_libraries(pybindTest PUBLIC )
+# target_sources(pytbindTest PUBLIC pybindTest.cpp)
 
 
 # copy need multi dll to exe dir 
 add_custom_command(TARGET usefmt POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${CMAKE_PREFIX_PATH}/$<$<CONFIG:Debug>:debug/>bin/fmt$<$<CONFIG:Debug>:d>.dll"
+    "${CMAKE_PREFIX_PATH}/$<$<CONFIG:Debug>:debug/>bin/jsoncpp.dll"
+    "${CMAKE_PREFIX_PATH}/$<$<CONFIG:Debug>:debug/>bin/libssl-3-x64.dll"
+
+    "${CMAKE_PREFIX_PATH}/$<$<CONFIG:Debug>:debug/>bin/Qt5Core$<$<CONFIG:Debug>:d>.dll"
+    # QtCore dependencies
+    "${CMAKE_PREFIX_PATH}/$<$<CONFIG:Debug>:debug/>bin/double-conversion.dll"  
+    "${CMAKE_PREFIX_PATH}/$<$<CONFIG:Debug>:debug/>bin/zlib$<$<CONFIG:Debug>:d>1.dll"
+    "${CMAKE_PREFIX_PATH}/$<$<CONFIG:Debug>:debug/>bin/pcre2-16$<$<CONFIG:Debug>:d>.dll"
+    "${CMAKE_PREFIX_PATH}/$<$<CONFIG:Debug>:debug/>bin/zst$<$<CONFIG:Debug>:d>.dll"
+    "${CMAKE_PREFIX_PATH}/$<$<CONFIG:Debug>:debug/>bin/Qt5Network$<$<CONFIG:Debug>:d>.dll"
+
+    "${CMAKE_PREFIX_PATH}/$<$<CONFIG:Debug>:debug/>bin/spdlog$<$<CONFIG:Debug>:d>.dll"
     $<TARGET_FILE_DIR:usefmt>)
 
 if(1)
